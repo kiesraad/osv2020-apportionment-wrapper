@@ -1,0 +1,4 @@
+<configuration>
+    <!-- No appenders: all log output is captured per-request via ListAppender and returned in the HTTP response. -->
+    <root level="INFO" />
+</configuration>
