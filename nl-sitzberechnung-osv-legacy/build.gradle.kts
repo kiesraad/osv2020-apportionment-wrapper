@@ -1,4 +1,4 @@
-var projectDir = "../osv2020-u-versie-1.10.5.1/nl-sitzberechnung-osv-legacy-1.1.11-sources"
+var projectDir = "../osv2020-u-versie-1.12.7.2/nl-sitzberechnung-osv-legacy-1.6.0"
 
 sourceSets {
     main {

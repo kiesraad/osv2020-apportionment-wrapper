@@ -27,7 +27,7 @@ tasks.register<Copy>("collectDependencies") {
     dependsOn(tasks.named("build"))
     dependsOn(subprojects.map { it.tasks.named("build") })
 
-    val outputDir = "${buildDir}/classpath"
+    val outputDir = "${rootProject.layout.buildDirectory}/classpath"
 
     // Delete any existing output directory first
     doFirst {

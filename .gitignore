@@ -3,7 +3,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
-osv2020-u-versie-1.10.5.1/
+osv2020-u-versie-*
 
 ### IntelliJ IDEA ###
 .idea/
