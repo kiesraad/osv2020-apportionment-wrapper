@@ -33,9 +33,12 @@ public class Main {
         long[] votes
     ) {}
 
-    record SeatsResponse(long[] seats, List<String> log) {}
+    record SeatsResponse(long[] seats, long[][] candidates, List<String> log) {}
     record ConflictResponse(boolean conflict, List<String> log) {}
     record ErrorResponse(String error, List<String> log) {}
+
+    /** Seats assigned per list plus the elected candidates as [listNumber, candidateNumber] pairs. */
+    record ApportionmentResult(long[] seats, long[][] candidates) {}
 
     static final class DrawingLotsRequiredException extends RuntimeException {
         final Decision decision;
@@ -61,12 +64,12 @@ public class Main {
 
             try {
                 ApportionmentRequest req = gson.fromJson(line, ApportionmentRequest.class);
-                long[] result = apportionment(req.seats(), req.pgCandidates(), req.votes());
+                ApportionmentResult result = apportionment(req.seats(), req.pgCandidates(), req.votes());
 
                 List<String> log = capture.list.stream()
                     .map(e -> e.getLevel() + " " + e.getFormattedMessage())
                     .collect(Collectors.toList());
-                out.println(gson.toJson(new SeatsResponse(result, log)));
+                out.println(gson.toJson(new SeatsResponse(result.seats(), result.candidates(), log)));
             } catch (DrawingLotsRequiredException e) {
                 List<String> log = capture.list.stream()
                     .map(ev -> ev.getLevel() + " " + ev.getFormattedMessage())
@@ -90,10 +93,10 @@ public class Main {
      * @param seats number of seats
      * @param pgCandidates array with the number of candidates for each political group
      * @param votes array with the votes for each candidate (length should be equal to the sum of pgCandidates)
-     * @return an array with the number of seats assigned to each political group
+     * @return the seats assigned per political group and the elected candidates
      * @throws DrawingLotsRequiredException when the result requires drawing lots to resolve a tie
      */
-    public static long[] apportionment(long seats, long[] pgCandidates, long[] votes) {
+    public static ApportionmentResult apportionment(long seats, long[] pgCandidates, long[] votes) {
         // Assert: the sum of pgCandidates should be equal to the votes array length
         if (Arrays.stream(pgCandidates).sum() != votes.length) {
             throw new IllegalArgumentException("Sum of pgCandidates should be equal to the length of votes");
@@ -144,10 +147,19 @@ public class Main {
             throw new DrawingLotsRequiredException(conflict);
         }
         logger.info("No conflict");
-        return er.getTotalSeatsAssigned()
+
+        long[] seatsAssigned = er.getTotalSeatsAssigned()
                 .entrySet()
                 .stream()
                 .sorted(Comparator.comparingInt(x -> x.getKey().getListNumber()))
                 .mapToLong(Map.Entry::getValue).toArray();
+
+        // Collect the elected candidates as [listNumber, candidateNumber] pairs, where the
+        // candidate number is the original position on the list.
+        long[][] electedCandidates = er.getCandidateResultsElectedHere().stream()
+                .map(cr -> new long[] { cr.getP2List().getListNumber(), cr.getOldListPosition() })
+                .toArray(long[][]::new);
+
+        return new ApportionmentResult(seatsAssigned, electedCandidates);
     }
 }
